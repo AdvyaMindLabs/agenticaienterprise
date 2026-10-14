@@ -1,0 +1,32 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "AgentForge: serve dashboard (mock)",
+      "type": "debugpy", "request": "launch", "module": "agentforge", "args": ["serve"],
+      "console": "integratedTerminal", "justMyCode": true,
+      "env": { "AGENTFORGE_PROVIDER": "mock" }
+    },
+    {
+      "name": "AgentForge: run sample 'slugify'",
+      "type": "debugpy", "request": "launch", "module": "agentforge",
+      "args": ["run", "--sample", "slugify", "--auto-approve"],
+      "console": "integratedTerminal", "justMyCode": false
+    },
+    {
+      "name": "AgentForge: run evals (x3)",
+      "type": "debugpy", "request": "launch", "module": "agentforge", "args": ["eval", "--repeat", "3"],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "AgentForge: unit tests",
+      "type": "debugpy", "request": "launch", "module": "unittest",
+      "args": ["discover", "-s", "tests", "-t", "."], "console": "integratedTerminal"
+    },
+    {
+      "name": "AgentForge: serve with real Claude (needs .env)",
+      "type": "debugpy", "request": "launch", "module": "agentforge", "args": ["serve"],
+      "console": "integratedTerminal", "envFile": "${workspaceFolder}/.env"
+    }
+  ]
+}

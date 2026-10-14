@@ -1,0 +1,11 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    { "label": "AgentForge: serve", "type": "shell", "command": "${command:python.interpreterPath}", "args": ["-m", "agentforge", "serve"],
+      "isBackground": true, "problemMatcher": [], "group": "build" },
+    { "label": "AgentForge: test", "type": "shell", "command": "${command:python.interpreterPath}", "args": ["-m", "unittest", "discover", "-s", "tests", "-t", "."],
+      "problemMatcher": [], "group": { "kind": "test", "isDefault": true } },
+    { "label": "AgentForge: eval", "type": "shell", "command": "${command:python.interpreterPath}", "args": ["-m", "agentforge", "eval", "--repeat", "3"], "problemMatcher": [] },
+    { "label": "AgentForge: reset demo", "type": "shell", "command": "${command:python.interpreterPath}", "args": ["-m", "agentforge", "reset", "--yes"], "problemMatcher": [] }
+  ]
+}

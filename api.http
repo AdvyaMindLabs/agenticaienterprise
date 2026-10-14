@@ -1,0 +1,25 @@
+### Use with the "REST Client" extension (click "Send Request"). Start the server first.
+
+### Server info
+GET http://127.0.0.1:8765/api/info
+
+### Submit a ticket (returns a run_id)
+POST http://127.0.0.1:8765/api/tickets
+Content-Type: application/json
+
+{ "title": "Add a clamp utility", "description": "Create clamp(value, low, high) and reject inverted bounds." }
+
+### List runs
+GET http://127.0.0.1:8765/api/runs
+
+### Run details + full trace (paste a run id)
+GET http://127.0.0.1:8765/api/runs/PASTE_RUN_ID
+
+### Approve a run that is awaiting approval
+POST http://127.0.0.1:8765/api/runs/PASTE_RUN_ID/decision
+Content-Type: application/json
+
+{ "approved": true, "note": "reviewed in VS Code" }
+
+### Latest eval scorecard
+GET http://127.0.0.1:8765/api/evals

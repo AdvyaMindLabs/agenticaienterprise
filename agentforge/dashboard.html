@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgentForge</title>
+<style>
+  :root {
+    --bg:#0e1319; --panel:#161d26; --panel2:#1c2531; --line:#2a3544; --text:#e7ebf1; --muted:#8c97a8;
+    --accent:#4f9cf9; --ok:#3fb67a; --warn:#e5a93c; --bad:#e5604f; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: light) {
+    :root { --bg:#f3f5f8; --panel:#ffffff; --panel2:#f0f3f7; --line:#d9dfe8; --text:#1a2230; --muted:#627086;
+            --accent:#1d6fe0; --ok:#1c8a56; --warn:#a96d08; --bad:#c23d2c; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
+  header { display:flex; align-items:center; gap:12px; padding:12px 20px; border-bottom:1px solid var(--line); background:var(--panel); }
+  header h1 { font-size:17px; margin:0; letter-spacing:.2px; }
+  .chip { font-size:12px; padding:2px 9px; border-radius:999px; border:1px solid var(--line); color:var(--muted); }
+  .spacer { flex:1; }
+  main { display:grid; grid-template-columns:340px 1fr; gap:16px; padding:16px 20px; max-width:1500px; margin:0 auto; }
+  @media (max-width: 900px) { main { grid-template-columns:1fr; } }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px; margin-bottom:16px; }
+  .card h2 { font-size:12px; text-transform:uppercase; letter-spacing:.8px; color:var(--muted); margin:0 0 10px; font-weight:600; }
+  label { display:block; font-size:12px; color:var(--muted); margin:8px 0 3px; }
+  input, textarea { width:100%; background:var(--panel2); color:var(--text); border:1px solid var(--line); border-radius:6px; padding:8px; font:inherit; }
+  textarea { min-height:78px; resize:vertical; }
+  button { background:var(--accent); color:#fff; border:0; border-radius:6px; padding:8px 14px; font:inherit; font-weight:600; cursor:pointer; }
+  button.ghost { background:transparent; color:var(--text); border:1px solid var(--line); }
+  button.ok { background:var(--ok); } button.bad { background:var(--bad); }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .samples button { font-size:12px; padding:4px 9px; }
+  .run { display:flex; gap:8px; align-items:center; padding:8px; border-radius:6px; cursor:pointer; border:1px solid transparent; }
+  .run:hover { background:var(--panel2); } .run.sel { background:var(--panel2); border-color:var(--accent); }
+  .run .t { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pill { font-size:11px; padding:1px 8px; border-radius:999px; font-weight:600; }
+  .s-running { background:#4f9cf933; color:var(--accent); } .s-awaiting_approval { background:#e5a93c33; color:var(--warn); }
+  .s-completed { background:#3fb67a33; color:var(--ok); } .s-failed, .s-rejected { background:#e5604f33; color:var(--bad); }
+  .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:10px; margin:12px 0; }
+  .stat { background:var(--panel2); border-radius:8px; padding:8px 10px; }
+  .stat b { display:block; font-size:18px; } .stat span { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.6px; }
+  .stepper { display:flex; gap:4px; flex-wrap:wrap; margin:6px 0 2px; }
+  .step { flex:1; min-width:78px; text-align:center; padding:6px 4px; border-radius:6px; font-size:12px; background:var(--panel2); color:var(--muted); border:1px solid var(--line); }
+  .step.done { color:var(--ok); border-color:var(--ok); } .step.cur { color:var(--accent); border-color:var(--accent); font-weight:700; }
+  .step.err { color:var(--bad); border-color:var(--bad); font-weight:700; }
+  .trace { max-height:420px; overflow:auto; font-family:var(--mono); font-size:12px; background:var(--panel2); border-radius:8px; padding:8px; }
+  .ev { display:flex; gap:8px; padding:2px 0; } .ev .t { color:var(--muted); width:46px; flex:none; text-align:right; }
+  .ev .ag { width:92px; flex:none; color:var(--accent); overflow:hidden; text-overflow:ellipsis; }
+  .ev .msg { flex:1; word-break:break-word; }
+  .ev.stage .msg { font-weight:700; } .ev.llm .msg { color:var(--muted); }
+  .ev.guardrail .msg, .ev.error .msg { color:var(--bad); font-weight:600; } .ev.approval .msg { color:var(--warn); }
+  pre.diff { margin:6px 0; padding:8px; background:var(--panel2); border-radius:6px; overflow:auto; font:12px var(--mono); max-height:240px; }
+  pre.diff .add { color:var(--ok); } pre.diff .del { color:var(--bad); }
+  details { margin:6px 0; } summary { cursor:pointer; font-weight:600; }
+  .approval { border:1px solid var(--warn); background:#e5a93c14; border-radius:10px; padding:12px; margin:12px 0; }
+  .muted { color:var(--muted); } .err { color:var(--bad); }
+  table { width:100%; border-collapse:collapse; } td, th { text-align:left; padding:5px 6px; border-bottom:1px solid var(--line); font-size:13px; }
+  .story { font-size:12px; color:var(--muted); margin:6px 0 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>AgentForge</h1><span class="chip" id="provider">loading...</span>
+  <span class="spacer"></span><span class="chip" id="evalchip">evals: not run</span>
+</header>
+<main>
+  <aside>
+    <div class="card">
+      <h2>New ticket</h2>
+      <div class="samples row" id="samples"></div>
+      <p class="story" id="story">Pick a sample to see what it demonstrates, or write your own.</p>
+      <label for="title">Title</label><input id="title" maxlength="200" placeholder="Add a slugify helper">
+      <label for="desc">Description</label><textarea id="desc" maxlength="4000" placeholder="What should the agents build?"></textarea>
+      <div class="row" style="margin-top:10px"><button id="submit">Run agents</button><span class="err" id="formerr"></span></div>
+    </div>
+    <div class="card"><h2>Runs</h2><div id="runs" class="muted">No runs yet.</div></div>
+  </aside>
+  <section>
+    <div class="card" id="detail"><h2>Run</h2><p class="muted">Submit a ticket to watch the team work.</p></div>
+    <div class="card">
+      <div class="row"><h2 style="margin:0">Evaluation scorecard</h2><span class="spacer"></span>
+        <button class="ghost" id="runevals">Run eval suite</button></div>
+      <div id="evals" class="muted" style="margin-top:10px">Not run yet.</div>
+    </div>
+  </section>
+</main>
+<script>
+const STAGES = ['plan','tests','code','verify','review','security','docs','approval','promote'];
+const LABEL = {plan:'Plan',tests:'Tests',code:'Code',verify:'Verify',review:'Review',security:'Security',docs:'Docs',approval:'Approval',promote:'Promote'};
+let selected = null, lastKey = '', samples = [];
+
+const h = (tag, props = {}, ...kids) => {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (k === 'class') e.className = v; else if (k.startsWith('on')) e.addEventListener(k.slice(2), v); else e.setAttribute(k, v);
+  }
+  for (const k of kids.flat()) if (k != null) e.append(k.nodeType ? k : document.createTextNode(String(k)));
+  return e;
+};  // Everything is rendered with textContent semantics: model output is untrusted and never parsed as HTML.
+const $ = (id) => document.getElementById(id);
+
+async function api(path, body) {
+  const opts = body === undefined ? {} : { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) };
+  const res = await fetch(path, opts);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || res.statusText);
+  return data;
+}
+
+function renderRuns(runs) {
+  const box = $('runs'); box.replaceChildren();
+  if (!runs.length) { box.textContent = 'No runs yet.'; return; }
+  for (const r of runs) {
+    box.append(h('div', {class: 'run' + (r.id === selected ? ' sel' : ''), onclick: () => { selected = r.id; lastKey = ''; refresh(); }},
+      h('span', {class: 't'}, r.title || r.id), h('span', {class: 'pill s-' + r.status}, r.status.replace('_', ' '))));
+  }
+}
+
+function diffView(text) {
+  const pre = h('pre', {class: 'diff'});
+  for (const line of text.split('\n')) pre.append(h('span', {class: line.startsWith('+') ? 'add' : line.startsWith('-') ? 'del' : ''}, line + '\n'));
+  return pre;
+}
+
+function renderRun(d) {
+  const r = d.run, trace = d.trace || [];
+  const key = [r.id, r.status, r.stage, trace.length, r.approval ? 1 : 0].join('|');
+  if (key === lastKey) return; lastKey = key;
+
+  const reached = new Set(trace.filter(e => e.type === 'stage').map(e => e.data.stage));
+  const curIdx = STAGES.indexOf(r.stage);
+  const stepper = h('div', {class: 'stepper'}, STAGES.map((s, i) => {
+    let cls = 'step';
+    if (r.status === 'failed' && i === curIdx) cls += ' err';
+    else if (['completed', 'rejected'].includes(r.status) ? reached.has(s) : (i < curIdx && reached.has(s))) cls += ' done';
+    else if (i === curIdx && r.status !== 'failed') cls += ' cur';
+    return h('div', {class: cls}, LABEL[s]);
+  }));
+
+  const sec = r.security;
+  const stats = h('div', {class: 'stats'},
+    stat(r.attempts ?? 0, 'attempts'), stat(r.guardrail_blocks ?? 0, 'guardrail blocks'),
+    stat(r.usage?.llm_calls ?? 0, 'model calls'), stat(r.usage?.tokens ?? 0, 'tokens (est.)'),
+    stat(sec ? sec.risk : '-', 'security risk'),
+    stat(r.tests ? (r.tests.passed ? 'pass' : 'fail') : '-', 'last tests'));
+
+  const kids = [
+    h('div', {class: 'row'}, h('h2', {style: 'margin:0'}, 'Run'), h('span', {class: 'pill s-' + r.status}, r.status.replace('_', ' ')), h('span', {class: 'muted'}, r.id)),
+    h('h3', {style: 'margin:8px 0 2px'}, r.ticket?.title || ''), h('div', {class: 'muted'}, r.ticket?.description || ''),
+    stepper, stats,
+  ];
+  if (r.plan?.summary) kids.push(h('p', {}, h('b', {}, 'Plan: '), r.plan.summary));
+  if (sec?.summary) kids.push(h('p', {}, h('b', {}, 'Security: '), sec.summary));
+  if (r.error) kids.push(h('p', {class: 'err'}, 'Failed: ' + r.error));
+
+  if (r.status === 'awaiting_approval') {
+    const note = h('input', {placeholder: 'Optional note for the audit trail'});
+    const decide = (approved) => async () => { try { await api(`/api/runs/${r.id}/decision`, {approved, note: note.value}); lastKey = ''; refresh(); } catch (e) { alert(e.message); } };
+    kids.push(h('div', {class: 'approval'},
+      h('b', {}, 'Human approval required'), h('div', {class: 'muted'}, 'Nothing has left the sandbox yet. Review the changes, then decide.'),
+      (r.changes || []).length ? r.changes.map(c => h('details', {open: ''}, h('summary', {}, `${c.status}: ${c.path}`), diffView(c.diff))) : h('p', {class: 'muted'}, 'No file changes (identical to workspace).'),
+      note, h('div', {class: 'row', style: 'margin-top:8px'}, h('button', {class: 'ok', onclick: decide(true)}, 'Approve and promote'), h('button', {class: 'bad', onclick: decide(false)}, 'Reject'))));
+  } else if (r.approval) {
+    kids.push(h('p', {}, h('b', {}, 'Decision: '), `${r.approval.approved ? 'approved' : 'rejected'} by ${r.approval.by}` + (r.approval.note ? ` (${r.approval.note})` : '')));
+  }
+
+  const box = h('div', {class: 'trace', id: 'tracebox'}, trace.map(e => h('div', {class: 'ev ' + e.type},
+    h('span', {class: 't'}, e.t.toFixed(1) + 's'), h('span', {class: 'ag'}, e.agent || ''), h('span', {class: 'msg'}, e.msg))));
+  kids.push(h('h2', {style: 'margin-top:14px'}, 'Trace (every decision, tool call and guardrail)'), box);
+
+  $('detail').replaceChildren(...kids);
+  const tb = $('tracebox'); tb.scrollTop = tb.scrollHeight;
+}
+const stat = (value, label) => h('div', {class: 'stat'}, h('b', {}, value), h('span', {}, label));
+
+function renderEvals(ev) {
+  const box = $('evals'), btn = $('runevals');
+  btn.disabled = ev.running; btn.textContent = ev.running ? 'Running...' : 'Run eval suite';
+  if (!ev.latest) { box.textContent = ev.running ? 'Running...' : 'Not run yet.'; return; }
+  const s = ev.latest.summary;
+  $('evalchip').textContent = `evals: ${s.passed}/${s.total} passed`;
+  const rows = Object.entries(s.by_ticket).map(([id, e]) => h('tr', {}, h('td', {}, id), h('td', {}, `${e.passed}/${e.runs}`),
+    h('td', {class: e.passed === e.runs ? '' : 'err'}, e.passed === e.runs ? 'pass' : 'FAIL')));
+  box.replaceChildren(h('p', {}, h('b', {}, `${s.passed}/${s.total} runs passed`), ` · provider ${ev.latest.provider} · avg ${s.avg_tokens} tokens/run`),
+    h('table', {}, h('tr', {}, h('th', {}, 'Ticket'), h('th', {}, 'Passed'), h('th', {}, 'Result')), rows));
+}
+
+async function refresh() {
+  try {
+    const [runs, ev] = await Promise.all([api('/api/runs'), api('/api/evals')]);
+    if (!selected && runs.runs.length) selected = runs.runs[0].id;
+    renderRuns(runs.runs); renderEvals(ev);
+    if (selected) renderRun(await api('/api/runs/' + selected));
+  } catch (e) { console.error(e); }
+}
+
+async function init() {
+  const info = await api('/api/info');
+  $('provider').textContent = `${info.provider} · ${info.model} · v${info.version}`;
+  samples = await api('/api/samples');
+  const box = $('samples');
+  for (const s of samples) box.append(h('button', {class: 'ghost', onclick: () => {
+    $('title').value = s.title; $('desc').value = s.description; $('story').textContent = s.story || '';
+  }}, s.id));
+  $('submit').addEventListener('click', async () => {
+    $('formerr').textContent = '';
+    try {
+      const res = await api('/api/tickets', {title: $('title').value, description: $('desc').value});
+      selected = res.run_id; lastKey = ''; refresh();
+    } catch (e) { $('formerr').textContent = e.message; }
+  });
+  $('runevals').addEventListener('click', async () => { await api('/api/evals', {}); refresh(); });
+  refresh(); setInterval(refresh, 1200);
+}
+init();
+</script>
+</body>
+</html>
